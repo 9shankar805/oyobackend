@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
+    "postinstall": "node setup-database.js",
     "dev": "nodemon enhanced-api.js",
     "test-server": "node test-server.js",
     "setup-db": "node setup-db.js",
