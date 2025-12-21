@@ -32,6 +32,17 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'OYO Backend Server Running', websocket: 'Active' });
 });
 
+// Test database connection
+app.get('/api/test-db', async (req, res) => {
+  try {
+    const { pool } = require('./database');
+    const result = await pool.query('SELECT COUNT(*) FROM users');
+    res.json({ success: true, user_count: result.rows[0].count });
+  } catch (error) {
+    res.json({ success: false, error: error.message });
+  }
+});
+
 // Auth routes - Google Login Only
 app.post('/api/auth/google', async (req, res) => {
   const { idToken, email, name, avatar } = req.body;
