@@ -38,6 +38,7 @@ app.post('/api/auth/google', async (req, res) => {
   
   try {
     // Check if user exists
+    const { pool } = require('./database');
     let user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     
     if (user.rows.length === 0) {
@@ -57,9 +58,10 @@ app.post('/api/auth/google', async (req, res) => {
       user: user.rows[0]
     });
   } catch (error) {
+    console.error('Google auth error:', error);
     res.status(400).json({ 
       success: false, 
-      error: 'Google login failed' 
+      error: error.message || 'Google login failed'
     });
   }
 });
