@@ -37,20 +37,24 @@ app.post('/api/auth/google', async (req, res) => {
   const { idToken, email, name, avatar } = req.body;
   
   try {
-    // In production, verify the Google ID token here
-    const user = {
-      id: Date.now(),
-      email: email,
-      name: name,
-      avatar: avatar,
-      role: 'customer',
-      created_at: new Date()
-    };
+    // Check if user exists
+    let user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    
+    if (user.rows.length === 0) {
+      // Create new user
+      const insertQuery = `
+        INSERT INTO users (name, email, avatar)
+        VALUES ($1, $2, $3)
+        RETURNING *
+      `;
+      const result = await pool.query(insertQuery, [name, email, avatar]);
+      user = result;
+    }
     
     res.json({ 
       success: true, 
       message: 'Google login successful',
-      user: user
+      user: user.rows[0]
     });
   } catch (error) {
     res.status(400).json({ 
