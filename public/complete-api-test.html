@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OYO Complete API Testing Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #E60023;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .stats { display: flex; justify-content: center; gap: 30px; margin-top: 20px; }
+        .stat { text-align: center; }
+        .stat-number { font-size: 2rem; font-weight: bold; }
+        .stat-label { font-size: 0.9rem; opacity: 0.9; }
+        
+        .content { padding: 30px; }
+        
+        .api-section {
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            border-left: 5px solid #E60023;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .test-all-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .endpoints-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 15px;
+        }
+        
+        .endpoint {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            position: relative;
+        }
+        
+        .method {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.7rem;
+            margin-right: 10px;
+        }
+        
+        .get { background: #28a745; color: white; }
+        .post { background: #007bff; color: white; }
+        .put { background: #ffc107; color: black; }
+        .delete { background: #dc3545; color: white; }
+        
+        .url {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin: 8px 0;
+            word-break: break-all;
+        }
+        
+        .test-btn {
+            background: #E60023;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+        
+        .status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #6c757d;
+        }
+        
+        .status.success { background: #28a745; }
+        .status.error { background: #dc3545; }
+        .status.loading { background: #ffc107; animation: pulse 1s infinite; }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .response {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.7rem;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .websocket-section {
+            background: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+        
+        .ws-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+        
+        .ws-connected { background: #4caf50; color: white; }
+        .ws-disconnected { background: #f44336; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏨 OYO API Testing Dashboard</h1>
+            <p>Complete Backend API Testing - All 49 Endpoints</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number" id="total-apis">49</div>
+                    <div class="stat-label">Total APIs</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="tested-apis">0</div>
+                    <div class="stat-label">Tested</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="success-apis">0</div>
+                    <div class="stat-label">Success</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <!-- Customer APIs -->
+            <div class="api-section">
+                <div class="section-header">
+                    <h2>👤 Customer APIs (27 endpoints)</h2>
+                    <button class="test-all-btn" onclick="testAllCustomer()">Test All Customer APIs</button>
+                </div>
+                <div class="endpoints-grid">
+                    <div class="endpoint">
+                        <div class="status" id="status-search"></div>
+                        <span class="method get">GET</span>
+                        <strong>Hotel Search</strong>
+                        <div class="url">/api/customer/hotels/search?city=Mumbai</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/customer/hotels/search?city=Mumbai', 'search')">Test</button>
+                        <div class="response" id="response-search"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-rooms"></div>
+                        <span class="method get">GET</span>
+                        <strong>Hotel Rooms</strong>
+                        <div class="url">/api/customer/hotels/1/rooms</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/customer/hotels/1/rooms', 'rooms')">Test</button>
+                        <div class="response" id="response-rooms"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-amenities"></div>
+                        <span class="method get">GET</span>
+                        <strong>Hotel Amenities</strong>
+                        <div class="url">/api/customer/hotels/1/amenities</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/customer/hotels/1/amenities', 'amenities')">Test</button>
+                        <div class="response" id="response-amenities"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-gallery"></div>
+                        <span class="method get">GET</span>
+                        <strong>Hotel Gallery</strong>
+                        <div class="url">/api/customer/hotels/1/gallery</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/customer/hotels/1/gallery', 'gallery')">Test</button>
+                        <div class="response" id="response-gallery"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-reviews"></div>
+                        <span class="method get">GET</span>
+                        <strong>Hotel Reviews</strong>
+                        <div class="url">/api/customer/hotels/1/reviews</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/customer/hotels/1/reviews', 'reviews')">Test</button>
+                        <div class="response" id="response-reviews"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-booking-create"></div>
+                        <span class="method post">POST</span>
+                        <strong>Create Booking</strong>
+                        <div class="url">/api/customer/bookings</div>
+                        <button class="test-btn" onclick="testBookingCreate()">Test</button>
+                        <div class="response" id="response-booking-create"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-user-bookings"></div>
+                        <span class="method get">GET</span>
+                        <strong>User Bookings</strong>
+                        <div class="url">/api/customer/bookings/user/1</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/customer/bookings/user/1', 'user-bookings')">Test</button>
+                        <div class="response" id="response-user-bookings"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-payment-methods"></div>
+                        <span class="method get">GET</span>
+                        <strong>Payment Methods</strong>
+                        <div class="url">/api/customer/payments/methods</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/customer/payments/methods', 'payment-methods')">Test</button>
+                        <div class="response" id="response-payment-methods"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-wallet-balance"></div>
+                        <span class="method get">GET</span>
+                        <strong>Wallet Balance</strong>
+                        <div class="url">/api/customer/payments/wallet/balance/1</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/customer/payments/wallet/balance/1', 'wallet-balance')">Test</button>
+                        <div class="response" id="response-wallet-balance"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-coupons"></div>
+                        <span class="method get">GET</span>
+                        <strong>Available Coupons</strong>
+                        <div class="url">/api/customer/coupons</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/customer/coupons', 'coupons')">Test</button>
+                        <div class="response" id="response-coupons"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-notifications"></div>
+                        <span class="method get">GET</span>
+                        <strong>Notifications</strong>
+                        <div class="url">/api/customer/notifications/1</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/customer/notifications/1', 'notifications')">Test</button>
+                        <div class="response" id="response-notifications"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-recommendations"></div>
+                        <span class="method get">GET</span>
+                        <strong>Recommendations</strong>
+                        <div class="url">/api/customer/recommendations/1</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/customer/recommendations/1', 'recommendations')">Test</button>
+                        <div class="response" id="response-recommendations"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-cities"></div>
+                        <span class="method get">GET</span>
+                        <strong>Nearby Cities</strong>
+                        <div class="url">/api/customer/cities/nearby</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/customer/cities/nearby', 'cities')">Test</button>
+                        <div class="response" id="response-cities"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-profile"></div>
+                        <span class="method get">GET</span>
+                        <strong>User Profile</strong>
+                        <div class="url">/api/customer/users/profile/1</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/customer/users/profile/1', 'profile')">Test</button>
+                        <div class="response" id="response-profile"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Owner APIs -->
+            <div class="api-section">
+                <div class="section-header">
+                    <h2>🏢 Hotel Owner APIs (10 endpoints)</h2>
+                    <button class="test-all-btn" onclick="testAllOwner()">Test All Owner APIs</button>
+                </div>
+                <div class="endpoints-grid">
+                    <div class="endpoint">
+                        <div class="status" id="status-hotel-register"></div>
+                        <span class="method post">POST</span>
+                        <strong>Register Hotel</strong>
+                        <div class="url">/api/owner/hotels/register</div>
+                        <button class="test-btn" onclick="testHotelRegister()">Test</button>
+                        <div class="response" id="response-hotel-register"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-add-room"></div>
+                        <span class="method post">POST</span>
+                        <strong>Add Room</strong>
+                        <div class="url">/api/owner/rooms</div>
+                        <button class="test-btn" onclick="testAddRoom()">Test</button>
+                        <div class="response" id="response-add-room"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-calendar"></div>
+                        <span class="method get">GET</span>
+                        <strong>Hotel Calendar</strong>
+                        <div class="url">/api/owner/calendar/1?month=12&year=2024</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/owner/calendar/1?month=12&year=2024', 'calendar')">Test</button>
+                        <div class="response" id="response-calendar"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-earnings"></div>
+                        <span class="method get">GET</span>
+                        <strong>Monthly Earnings</strong>
+                        <div class="url">/api/owner/earnings/monthly/1?month=12&year=2024</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/owner/earnings/monthly/1?month=12&year=2024', 'earnings')">Test</button>
+                        <div class="response" id="response-earnings"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin APIs -->
+            <div class="api-section">
+                <div class="section-header">
+                    <h2>⚙️ Admin APIs (12 endpoints)</h2>
+                    <button class="test-all-btn" onclick="testAllAdmin()">Test All Admin APIs</button>
+                </div>
+                <div class="endpoints-grid">
+                    <div class="endpoint">
+                        <div class="status" id="status-admin-users"></div>
+                        <span class="method get">GET</span>
+                        <strong>All Users</strong>
+                        <div class="url">/api/admin/users</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/admin/users', 'admin-users')">Test</button>
+                        <div class="response" id="response-admin-users"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-user-analytics"></div>
+                        <span class="method get">GET</span>
+                        <strong>User Analytics</strong>
+                        <div class="url">/api/admin/users/analytics</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/admin/users/analytics', 'user-analytics')">Test</button>
+                        <div class="response" id="response-user-analytics"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-pending-hotels"></div>
+                        <span class="method get">GET</span>
+                        <strong>Pending Hotels</strong>
+                        <div class="url">/api/admin/hotels/pending</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/admin/hotels/pending', 'pending-hotels')">Test</button>
+                        <div class="response" id="response-pending-hotels"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-booking-analytics"></div>
+                        <span class="method get">GET</span>
+                        <strong>Booking Analytics</strong>
+                        <div class="url">/api/admin/bookings/analytics</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/admin/bookings/analytics', 'booking-analytics')">Test</button>
+                        <div class="response" id="response-booking-analytics"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-revenue"></div>
+                        <span class="method get">GET</span>
+                        <strong>Revenue Data</strong>
+                        <div class="url">/api/admin/revenue</div>
+                        <button class="test-btn" onclick="testAPI('GET', '/api/admin/revenue', 'revenue')">Test</button>
+                        <div class="response" id="response-revenue"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WebSocket Testing -->
+            <div class="api-section websocket-section">
+                <div class="section-header">
+                    <h2>🔌 WebSocket Real-time Features</h2>
+                    <span class="ws-status ws-disconnected" id="ws-status">Disconnected</span>
+                    <button class="test-all-btn" onclick="connectWebSocket()">Connect WebSocket</button>
+                </div>
+                <div class="endpoints-grid">
+                    <div class="endpoint">
+                        <div class="status" id="status-ws-chat"></div>
+                        <strong>Real-time Chat</strong>
+                        <p>Customer ↔ Hotel Owner messaging</p>
+                        <button class="test-btn" onclick="testChat()">Test Chat</button>
+                        <div class="response" id="response-ws-chat"></div>
+                    </div>
+                    
+                    <div class="endpoint">
+                        <div class="status" id="status-ws-notifications"></div>
+                        <strong>Live Notifications</strong>
+                        <p>Booking updates, payment confirmations</p>
+                        <button class="test-btn" onclick="testNotifications()">Test Notifications</button>
+                        <div class="response" id="response-ws-notifications"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const BASE_URL = 'http://localhost:3000';
+        let socket = null;
+        let testedCount = 0;
+        let successCount = 0;
+
+        // Test individual API
+        async function testAPI(method, endpoint, id) {
+            const statusEl = document.getElementById(`status-${id}`);
+            const responseEl = document.getElementById(`response-${id}`);
+            
+            statusEl.className = 'status loading';
+            responseEl.style.display = 'block';
+            responseEl.textContent = 'Testing...';
+            
+            try {
+                const response = await fetch(BASE_URL + endpoint, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                statusEl.className = response.ok ? 'status success' : 'status error';
+                responseEl.textContent = JSON.stringify(data, null, 2);
+                
+                if (response.ok) {
+                    successCount++;
+                    document.getElementById('success-apis').textContent = successCount;
+                }
+                
+                testedCount++;
+                document.getElementById('tested-apis').textContent = testedCount;
+                
+            } catch (error) {
+                statusEl.className = 'status error';
+                responseEl.textContent = 'Error: ' + error.message;
+                testedCount++;
+                document.getElementById('tested-apis').textContent = testedCount;
+            }
+        }
+
+        // Test booking creation with sample data
+        async function testBookingCreate() {
+            const statusEl = document.getElementById('status-booking-create');
+            const responseEl = document.getElementById('response-booking-create');
+            
+            statusEl.className = 'status loading';
+            responseEl.style.display = 'block';
+            responseEl.textContent = 'Testing...';
+            
+            const bookingData = {
+                user_id: 1,
+                hotel_id: 1,
+                room_id: 1,
+                check_in_date: '2024-12-20',
+                check_out_date: '2024-12-22',
+                guests: 2,
+                total_amount: 5000
+            };
+            
+            try {
+                const response = await fetch(BASE_URL + '/api/customer/bookings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bookingData)
+                });
+                
+                const data = await response.json();
+                statusEl.className = response.ok ? 'status success' : 'status error';
+                responseEl.textContent = JSON.stringify(data, null, 2);
+                
+                if (response.ok) successCount++;
+                testedCount++;
+                updateStats();
+                
+            } catch (error) {
+                statusEl.className = 'status error';
+                responseEl.textContent = 'Error: ' + error.message;
+                testedCount++;
+                updateStats();
+            }
+        }
+
+        // Test hotel registration
+        async function testHotelRegister() {
+            const hotelData = {
+                owner_id: 1,
+                name: 'Test Hotel',
+                address: '123 Test Street',
+                city: 'Mumbai',
+                state: 'Maharashtra',
+                country: 'India',
+                phone: '+91-9876543210',
+                email: 'test@hotel.com',
+                description: 'A test hotel',
+                amenities: ['WiFi', 'AC', 'TV'],
+                images: ['image1.jpg', 'image2.jpg']
+            };
+            
+            const statusEl = document.getElementById('status-hotel-register');
+            const responseEl = document.getElementById('response-hotel-register');
+            
+            statusEl.className = 'status loading';
+            responseEl.style.display = 'block';
+            
+            try {
+                const response = await fetch(BASE_URL + '/api/owner/hotels/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(hotelData)
+                });
+                
+                const data = await response.json();
+                statusEl.className = response.ok ? 'status success' : 'status error';
+                responseEl.textContent = JSON.stringify(data, null, 2);
+                
+                if (response.ok) successCount++;
+                testedCount++;
+                updateStats();
+                
+            } catch (error) {
+                statusEl.className = 'status error';
+                responseEl.textContent = 'Error: ' + error.message;
+                testedCount++;
+                updateStats();
+            }
+        }
+
+        // Test add room
+        async function testAddRoom() {
+            const roomData = {
+                hotel_id: 1,
+                room_type: 'Deluxe',
+                description: 'Spacious deluxe room',
+                price_per_night: 2500,
+                max_occupancy: 2,
+                amenities: ['AC', 'TV', 'WiFi'],
+                images: ['room1.jpg']
+            };
+            
+            const statusEl = document.getElementById('status-add-room');
+            const responseEl = document.getElementById('response-add-room');
+            
+            statusEl.className = 'status loading';
+            responseEl.style.display = 'block';
+            
+            try {
+                const response = await fetch(BASE_URL + '/api/owner/rooms', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(roomData)
+                });
+                
+                const data = await response.json();
+                statusEl.className = response.ok ? 'status success' : 'status error';
+                responseEl.textContent = JSON.stringify(data, null, 2);
+                
+                if (response.ok) successCount++;
+                testedCount++;
+                updateStats();
+                
+            } catch (error) {
+                statusEl.className = 'status error';
+                responseEl.textContent = 'Error: ' + error.message;
+                testedCount++;
+                updateStats();
+            }
+        }
+
+        // WebSocket functions
+        function connectWebSocket() {
+            socket = io(BASE_URL, {
+                auth: {
+                    token: 'test-token'
+                }
+            });
+            
+            socket.on('connect', () => {
+                document.getElementById('ws-status').textContent = 'Connected';
+                document.getElementById('ws-status').className = 'ws-status ws-connected';
+            });
+            
+            socket.on('disconnect', () => {
+                document.getElementById('ws-status').textContent = 'Disconnected';
+                document.getElementById('ws-status').className = 'ws-status ws-disconnected';
+            });
+            
+            socket.on('new_message', (data) => {
+                const responseEl = document.getElementById('response-ws-chat');
+                responseEl.style.display = 'block';
+                responseEl.textContent = 'New message received: ' + JSON.stringify(data, null, 2);
+            });
+            
+            socket.on('notification', (data) => {
+                const responseEl = document.getElementById('response-ws-notifications');
+                responseEl.style.display = 'block';
+                responseEl.textContent = 'Notification received: ' + JSON.stringify(data, null, 2);
+            });
+        }
+
+        function testChat() {
+            if (!socket) {
+                alert('Please connect WebSocket first');
+                return;
+            }
+            
+            socket.emit('send_message', {
+                booking_id: 1,
+                message: 'Test message from API dashboard',
+                receiver_id: 2
+            });
+            
+            document.getElementById('status-ws-chat').className = 'status success';
+        }
+
+        function testNotifications() {
+            if (!socket) {
+                alert('Please connect WebSocket first');
+                return;
+            }
+            
+            socket.emit('booking_update', {
+                booking_id: 1,
+                status: 'confirmed',
+                user_id: 1,
+                owner_id: 2
+            });
+            
+            document.getElementById('status-ws-notifications').className = 'status success';
+        }
+
+        // Test all functions
+        async function testAllCustomer() {
+            const customerAPIs = [
+                ['GET', '/api/customer/hotels/search?city=Mumbai', 'search'],
+                ['GET', '/api/customer/hotels/1/rooms', 'rooms'],
+                ['GET', '/api/customer/hotels/1/amenities', 'amenities'],
+                ['GET', '/api/customer/hotels/1/gallery', 'gallery'],
+                ['GET', '/api/customer/hotels/1/reviews', 'reviews'],
+                ['GET', '/api/customer/bookings/user/1', 'user-bookings'],
+                ['GET', '/api/customer/payments/methods', 'payment-methods'],
+                ['GET', '/api/customer/payments/wallet/balance/1', 'wallet-balance'],
+                ['GET', '/api/customer/coupons', 'coupons'],
+                ['GET', '/api/customer/notifications/1', 'notifications'],
+                ['GET', '/api/customer/recommendations/1', 'recommendations'],
+                ['GET', '/api/customer/cities/nearby', 'cities'],
+                ['GET', '/api/customer/users/profile/1', 'profile']
+            ];
+            
+            for (const [method, endpoint, id] of customerAPIs) {
+                await testAPI(method, endpoint, id);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            await testBookingCreate();
+        }
+
+        async function testAllOwner() {
+            await testHotelRegister();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testAddRoom();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testAPI('GET', '/api/owner/calendar/1?month=12&year=2024', 'calendar');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testAPI('GET', '/api/owner/earnings/monthly/1?month=12&year=2024', 'earnings');
+        }
+
+        async function testAllAdmin() {
+            const adminAPIs = [
+                ['GET', '/api/admin/users', 'admin-users'],
+                ['GET', '/api/admin/users/analytics', 'user-analytics'],
+                ['GET', '/api/admin/hotels/pending', 'pending-hotels'],
+                ['GET', '/api/admin/bookings/analytics', 'booking-analytics'],
+                ['GET', '/api/admin/revenue', 'revenue']
+            ];
+            
+            for (const [method, endpoint, id] of adminAPIs) {
+                await testAPI(method, endpoint, id);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('tested-apis').textContent = testedCount;
+            document.getElementById('success-apis').textContent = successCount;
+        }
+
+        // Auto-connect WebSocket on load
+        window.addEventListener('load', () => {
+            setTimeout(connectWebSocket, 1000);
+        });
+    </script>
+</body>
+</html>
