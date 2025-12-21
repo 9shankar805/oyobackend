@@ -2,6 +2,69 @@ const express = require('express');
 const { pool } = require('../database');
 const router = express.Router();
 
+// Owner dashboard
+router.get('/dashboard/:ownerId', async (req, res) => {
+  try {
+    const { ownerId } = req.params;
+    
+    // Get owner hotels
+    const hotelsQuery = `
+      SELECT h.*, COUNT(r.id) as room_count
+      FROM hotels h
+      LEFT JOIN rooms r ON h.id = r.hotel_id
+      WHERE h.owner_id = $1
+      GROUP BY h.id
+    `;
+    const hotels = await pool.query(hotelsQuery, [ownerId]);
+    
+    // Get recent bookings
+    const bookingsQuery = `
+      SELECT b.*, h.name as hotel_name, u.name as guest_name
+      FROM bookings b
+      JOIN hotels h ON b.hotel_id = h.id
+      JOIN users u ON b.user_id = u.id
+      WHERE h.owner_id = $1
+      ORDER BY b.created_at DESC
+      LIMIT 10
+    `;
+    const bookings = await pool.query(bookingsQuery, [ownerId]);
+    
+    // Get earnings summary
+    const earningsQuery = `
+      SELECT 
+        SUM(p.amount) as total_earnings,
+        COUNT(p.id) as total_bookings
+      FROM payments p
+      JOIN bookings b ON p.booking_id = b.id
+      JOIN hotels h ON b.hotel_id = h.id
+      WHERE h.owner_id = $1 AND p.status = 'completed'
+    `;
+    const earnings = await pool.query(earningsQuery, [ownerId]);
+    
+    res.json({ 
+      success: true, 
+      dashboard: {
+        hotels: hotels.rows,
+        recent_bookings: bookings.rows,
+        earnings: earnings.rows[0] || { total_earnings: 0, total_bookings: 0 }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get owner hotels
+router.get('/hotels/:ownerId', async (req, res) => {
+  try {
+    const { ownerId } = req.params;
+    const result = await pool.query('SELECT * FROM hotels WHERE owner_id = $1', [ownerId]);
+    res.json({ success: true, hotels: result.rows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Register hotel
 router.post('/hotels/register', async (req, res) => {
   try {
