@@ -1,13 +1,1 @@
-node_modules/
-.env
-.env.local
-.env.production
-*.log
-dist/
-build/
-.DS_Store
-*.json
-!package*.json
-coverage/
-.nyc_output/
-.cache/
+node_modules

@@ -1,0 +1,413 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  phone         String?
+  role          Role     @default(CUSTOMER)
+  avatar        String?
+  verified      Boolean  @default(false)
+  passwordHash  String?
+  googleId      String?  @unique
+  googleSub     String?  // Google Sign-In subject ID - added to match backend usage
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  hotels        Hotel[]
+  bookings      Booking[]
+  reviews       Review[]
+  wallet        Wallet?
+  payouts       Payout[]
+  loyaltyTier   LoyaltyTier @default(BRONZE)
+  loyaltyPoints Int         @default(0)
+  loyaltyMember LoyaltyMembership?
+
+  @@map("users")
+}
+
+model Hotel {
+  id            String      @id @default(cuid())
+  name          String
+  description   String?
+  address       String
+  city          String
+  state         String
+  country       String      @default("Nepal")
+  pincode       String?
+  latitude      Float?
+  longitude     Float?
+  phone         String
+  email         String
+  checkInTime   String      @default("14:00")
+  checkOutTime  String      @default("11:00")
+  status        HotelStatus @default(PENDING)
+  rating        Float       @default(0)
+  totalReviews  Int         @default(0)
+  images        Json
+  amenities     Json
+  brand         HotelBrand  @default(OYO)
+  franchiseId   String?
+  ownerId       String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Section 1: Property Basic Info
+  propertyType         PropertyType? @default(HOTEL)
+  totalRooms           Int?
+  yearOfEstablishment Int?
+  priceRangeMin        Int?
+  priceRangeMax        Int?
+
+  // Section 2: Location (Nepal-specific)
+  district   String?
+  wardNumber Int?
+  landmark  String?
+
+  // Section 3: Property Photos
+  exteriorPhoto String?
+  receptionPhoto String?
+  gallery      Json?
+
+  // Section 4: Agreements
+  termsAccepted              Boolean @default(false)
+  commissionAccepted        Boolean @default(false)
+  cancellationPolicyAccepted Boolean @default(false)
+
+  owner         User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  franchise     Franchise?  @relation(fields: [franchiseId], references: [id])
+  rooms         Room[]
+  bookings      Booking[]
+  reviews       Review[]
+  
+  @@map("hotels")
+}
+
+enum PropertyType {
+  HOTEL
+  LODGE
+  GUEST_HOUSE
+  RESORT
+  HOMESTAY
+}
+
+model Room {
+  id            String   @id @default(cuid())
+  name          String
+  type          RoomType
+  basePrice     Int      @map("price_per_night")
+  maxOccupancy  Int
+  amenities     Json
+  images        Json
+  isActive      Boolean  @default(true)
+  hotelId       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  hotel         Hotel       @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  bookings      Booking[]
+  pricingRules  PricingRule[]
+  
+  @@map("rooms")
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  bookingNumber String        @unique
+  checkIn       DateTime
+  checkOut      DateTime
+  guests        Int
+  totalAmount   Int
+  status        BookingStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+  userId        String
+  hotelId       String
+  roomId        String
+  specialRequests String?
+  preCheckIn    Json?
+  actualCheckIn DateTime?
+  actualCheckOut DateTime?
+  checkInMethod String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id])
+  hotel         Hotel         @relation(fields: [hotelId], references: [id])
+  room          Room          @relation(fields: [roomId], references: [id])
+  payments      Payment[]
+  review        Review?
+  
+  @@map("bookings")
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  amount        Int
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  stripeId      String?
+  bookingId     String
+  createdAt     DateTime      @default(now())
+
+  booking       Booking       @relation(fields: [bookingId], references: [id])
+  
+  @@map("payments")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  userId    String
+  hotelId   String
+  bookingId String   @unique
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  hotel     Hotel    @relation(fields: [hotelId], references: [id])
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  
+  @@map("reviews")
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  balance   Int      @default(0)
+  userId    String   @unique
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("wallets")
+}
+
+model Payout {
+  id            String      @id @default(cuid())
+  amount        Int
+  status        PayoutStatus @default(PENDING)
+  bankAccount   String
+  ifscCode      String
+  ownerId       String
+  createdAt     DateTime    @default(now())
+
+  owner         User        @relation(fields: [ownerId], references: [id])
+  
+  @@map("payouts")
+}
+
+model LoyaltyMembership {
+  id            String      @id @default(cuid())
+  userId        String      @unique
+  tier          LoyaltyTier
+  points        Int         @default(0)
+  totalBookings Int         @default(0)
+  totalSpent    Int         @default(0)
+  memberSince   DateTime    @default(now())
+  lastActivity  DateTime    @default(now())
+  benefits      Json        @default("[]")
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rewards       LoyaltyReward[]
+
+  @@map("loyalty_memberships")
+}
+
+model LoyaltyReward {
+  id          String   @id @default(cuid())
+  type        RewardType
+  points      Int
+  description String
+  expiryDate  DateTime
+  isUsed      Boolean  @default(false)
+  membershipId String
+
+  membership  LoyaltyMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@map("loyalty_rewards")
+}
+
+model PricingRule {
+  id          String      @id @default(cuid())
+  roomId      String
+  ruleType    PricingRuleType
+  name        String
+  value       Float
+  startDate   DateTime?
+  endDate     DateTime?
+  isActive    Boolean     @default(true)
+  priority    Int         @default(1)
+  conditions  Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  room        Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("pricing_rules")
+}
+
+model DynamicPrice {
+  id          String   @id @default(cuid())
+  roomId      String
+  date        DateTime
+  basePrice   Int
+  finalPrice  Int
+  occupancyRate Float?
+  demandScore Float?
+  createdAt   DateTime @default(now())
+
+  @@unique([roomId, date])
+  @@map("dynamic_prices")
+}
+
+model SeasonalDemand {
+  id          String   @id @default(cuid())
+  city        String
+  season      String
+  demandMultiplier Float
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("seasonal_demands")
+}
+
+model EventDemand {
+  id          String   @id @default(cuid())
+  name        String
+  city        String
+  venue       String?
+  startDate   DateTime
+  endDate     DateTime
+  demandMultiplier Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("event_demands")
+}
+
+model Franchise {
+  id            String   @id @default(cuid())
+  franchiseName String
+  brand         HotelBrand @default(OYO)
+  contactPerson String
+  email         String
+  phone         String
+  address       String
+  city          String
+  state         String
+  pincode       String
+  commissionRate Float   @default(0.15)
+  status        FranchiseStatus @default(PENDING)
+  contractStart DateTime?
+  contractEnd   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  hotels        Hotel[]
+  
+  @@map("franchises")
+}
+
+enum FranchiseStatus {
+  PENDING
+  APPROVED
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+enum Role {
+  CUSTOMER
+  OWNER
+  ADMIN
+}
+
+enum HotelStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum RoomType {
+  STANDARD
+  DELUXE
+  PREMIUM
+  SUITE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CARD
+  UPI
+  WALLET
+  NET_BANKING
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum LoyaltyTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+}
+
+enum RewardType {
+  DISCOUNT
+  FREE_NIGHT
+  UPGRADE
+  CASHBACK
+  POINTS_BONUS
+}
+
+enum PricingRuleType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  MIN_STAY
+  ADVANCE_BOOKING
+  WEEKDAY
+  WEEKEND
+  SEASONAL
+  EVENT_BASED
+}
+
+enum HotelBrand {
+  OYO
+  OYO_HOME
+  OYO_TOWNHOUSE
+  OYO_VACATION
+  OYO_LIFE
+  SUNDAY_HOTELS
+  BELVILLA
+  COLLECTION_O
+}

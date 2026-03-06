@@ -1,0 +1,5 @@
+{
+  "note": "Add groq-sdk to your backend package.json dependencies",
+  "command": "npm install groq-sdk",
+  "dependency": "\"groq-sdk\": \"^0.3.0\""
+}
